@@ -13,7 +13,6 @@ contract ERC20 is Ownable{
     
     
     event Transfer(address a,address b,uint value);
-    event TokenBurned(address burner, uint value);
     event Approval(address indexed _owner, address indexed _spender, uint _value);
     
     
