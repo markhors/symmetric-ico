@@ -1,0 +1,139 @@
+pragma solidity ^0.4.16;
+
+import './Ownable.sol';
+import './SafeMath.sol';
+
+contract Bank is Ownable{
+    using SafeMath for uint256;
+    
+    uint BankTotal;
+    uint minDeposit;
+    uint minWithdraw;
+    uint maxWithdraw;
+    
+    //mapping
+    mapping (address=> Account)public Accounts;
+    
+    //events
+    event EDeposit(address a,uint b);
+    event Ewithdraw(address a,uint b);
+    event ETransfer(address sender,address receiver,uint c);
+    
+    // Account Struct
+    struct Account{
+        string name;
+        address _address;
+        uint ID;
+        uint balance;
+        bool open;
+    }
+    
+    modifier onlyUser()
+    {
+        require(Accounts[msg.sender].open==true);
+        _;
+    }
+    
+//getters
+    
+        function getBalance()public view returns(uint)
+        {
+            return Accounts[msg.sender].balance;
+            
+        }
+        
+        function getBankTotal()onlyOwner public view returns(uint)
+        {
+            return BankTotal;
+        }
+ 
+        
+ //setters
+
+        function setMinDeposit(uint _value)onlyOwner public
+        {
+            minDeposit = _value;
+        }
+        
+        function setMinWithdraw(uint _value)onlyOwner public 
+        {
+            minWithdraw=_value;
+        }
+        
+        function setMaxWithdraw(uint _value)onlyOwner public
+        {
+            maxWithdraw=_value;
+        }
+        
+        
+        // Account Creation
+        
+        function MakeAccount(string name,uint ID) public returns(bool done)
+        {
+           Accounts[msg.sender].ID=ID;
+           Accounts[msg.sender]._address=msg.sender;
+           Accounts[msg.sender].name=name;
+           Accounts[msg.sender].balance=0;
+           Accounts[msg.sender].open=true;
+           
+           return true;
+            
+        }
+        
+    
+
+        
+        function deposit (uint _value)onlyUser public returns (bool done)
+        {
+           
+                if(_value>minDeposit)
+                {
+                    Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value);
+                    BankTotal=BankTotal.add(_value);
+                    
+                    EDeposit(msg.sender,_value);
+            
+                    return true; 
+                }
+          
+            return false;
+        }
+        
+    
+        function withdraw(uint _value)onlyUser public returns(bool done)
+        {
+            
+                if (_value>minWithdraw && _value<maxWithdraw)
+                {
+                    Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
+                    BankTotal=BankTotal.sub(_value);
+                    
+                    Ewithdraw(msg.sender,_value);
+                    
+                    return true;
+                }
+            
+            return false;
+        }
+        
+        function Transfer (address receiver,uint _value)onlyUser public returns (bool done)
+        {
+           
+                if (_value > 0 || _value < Accounts[msg.sender].balance)
+                {
+                Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
+                Accounts[receiver].balance=Accounts[receiver].balance.add(_value);
+                
+                ETransfer(msg.sender,receiver,_value);
+                
+                return true;
+                }
+            
+           
+        return false;
+        }
+        
+        
+        
+    
+}
