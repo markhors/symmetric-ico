@@ -10,9 +10,16 @@ contract Bank is Ownable{
     uint minDeposit;
     uint minWithdraw;
     uint maxWithdraw;
+    uint DepositBonus;
+    uint transferTax;
     
     //mapping
     mapping (address=> Account)public Accounts;
+    
+    //enum
+   enum accountType {saving,current,premium}
+
+   
     
     //events
     event EDeposit(address a,uint b);
@@ -26,11 +33,13 @@ contract Bank is Ownable{
         uint ID;
         uint balance;
         bool open;
+        accountType Type;
+        
     }
     
     modifier onlyUser()
     {
-        require(Accounts[msg.sender].open==true);
+        require(Accounts[msg.sender].open == true);
         _;
     }
     
@@ -64,17 +73,39 @@ contract Bank is Ownable{
         {
             maxWithdraw=_value;
         }
+        function setTransferTax(uint _value)onlyOwner public
+        {
+            transferTax=_value;
+        }
+        function setdepositBonus(uint _value)onlyOwner public
+        {
+            DepositBonus=_value;
+        }
         
         
         // Account Creation
         
-        function MakeAccount(string name,uint ID) public returns(bool done)
+        function MakeAccount(string name,uint ID,accountType a,uint startAmount) public returns(bool done)
         {
            Accounts[msg.sender].ID=ID;
            Accounts[msg.sender]._address=msg.sender;
            Accounts[msg.sender].name=name;
-           Accounts[msg.sender].balance=0;
+           Accounts[msg.sender].Type=a;
+           
+           if(Accounts[msg.sender].Type == accountType.saving){
+              Accounts[msg.sender].balance = startAmount.sub(20);
+           }
+           if(Accounts[msg.sender].Type == accountType.current){
+              Accounts[msg.sender].balance = startAmount.sub(50);
+           }
+           if(Accounts[msg.sender].Type == accountType.premium){
+               Accounts[msg.sender].balance = startAmount.sub(100);
+           }
+           
+           
            Accounts[msg.sender].open=true;
+           
+         
            
            return true;
             
@@ -85,16 +116,19 @@ contract Bank is Ownable{
         
         function deposit (uint _value)onlyUser public returns (bool done)
         {
-           
-                if(_value>minDeposit)
+            if(_value>minDeposit)
+            {
+                if (_value >800)
                 {
-                    Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value);
-                    BankTotal=BankTotal.add(_value);
-                    
-                    EDeposit(msg.sender,_value);
-            
-                    return true; 
+                    Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value).add(DepositBonus);
                 }
+                Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value);
+                BankTotal=BankTotal.add(_value);
+                
+                EDeposit(msg.sender,_value);
+        
+                return true; 
+            }
           
             return false;
         }
@@ -102,33 +136,43 @@ contract Bank is Ownable{
     
         function withdraw(uint _value)onlyUser public returns(bool done)
         {
-            
-                if (_value>minWithdraw && _value<maxWithdraw)
-                {
-                    Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
-                    BankTotal=BankTotal.sub(_value);
-                    
-                    Ewithdraw(msg.sender,_value);
-                    
-                    return true;
-                }
+        
+            if (_value>minWithdraw && _value<maxWithdraw)
+            {
+                Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
+                BankTotal=BankTotal.sub(_value);
+                
+                Ewithdraw(msg.sender,_value);
+                
+                return true;
+            }
             
             return false;
         }
         
         function Transfer (address receiver,uint _value)onlyUser public returns (bool done)
         {
-           
-                if (_value > 0 || _value < Accounts[msg.sender].balance)
+       
+            if (_value > 0 || _value < Accounts[msg.sender].balance)
+            {
+                if(Accounts[msg.sender].Type==Accounts[receiver].Type || Accounts[msg.sender].Type== accountType.premium)
                 {
-                Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
-                Accounts[receiver].balance=Accounts[receiver].balance.add(_value);
+                    Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
+                    Accounts[receiver].balance=Accounts[receiver].balance.add(_value);
+                    ETransfer(msg.sender,receiver,_value);
+                }
                 
-                ETransfer(msg.sender,receiver,_value);
-                
-                return true;
+                else
+                {
+                    _value=_value.sub(transferTax);
+                    Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
+                    Accounts[receiver].balance=Accounts[receiver].balance.add(_value);
+                    ETransfer(msg.sender,receiver,_value); 
                 }
             
+            return true;
+            }
+        
            
         return false;
         }
