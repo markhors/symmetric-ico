@@ -116,45 +116,46 @@ contract Bank is Ownable{
         
         function deposit (uint _value)onlyUser public returns (bool done)
         {
-            if(_value>minDeposit)
-            {
+            require(_value>minDeposit);
+            
                 if (_value >800)
                 {
                     Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value).add(DepositBonus);
+                     BankTotal=BankTotal.add(_value);
+                     EDeposit(msg.sender,_value);
                 }
+                else
+                {
                 Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value);
                 BankTotal=BankTotal.add(_value);
-                
                 EDeposit(msg.sender,_value);
-        
+                }
                 return true; 
-            }
-          
-            return false;
+            
+    
         }
         
     
         function withdraw(uint _value)onlyUser public returns(bool done)
         {
         
-            if (_value>minWithdraw && _value<maxWithdraw)
-            {
+            require (_value>minWithdraw && _value<maxWithdraw);
+            
                 Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
                 BankTotal=BankTotal.sub(_value);
                 
                 Ewithdraw(msg.sender,_value);
                 
                 return true;
-            }
             
-            return false;
+         
         }
         
         function Transfer (address receiver,uint _value)onlyUser public returns (bool done)
         {
        
-            if (_value > 0 || _value < Accounts[msg.sender].balance)
-            {
+            require (_value > 0 || _value < Accounts[msg.sender].balance);
+            
                 if(Accounts[msg.sender].Type==Accounts[receiver].Type || Accounts[msg.sender].Type== accountType.premium)
                 {
                     Accounts[msg.sender].balance=Accounts[msg.sender].balance.sub(_value);
@@ -172,12 +173,9 @@ contract Bank is Ownable{
             
             return true;
             }
-        
-           
-        return false;
+      
         }
         
         
         
     
-}
