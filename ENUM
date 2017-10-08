@@ -1,0 +1,136 @@
+
+contract Bank is Ownable,BankToken{
+    using SafeMath for uint256;
+    
+    uint BankProfit;
+    uint TokenProfit;
+    uint minDeposit;
+    uint minWithdraw;
+    uint maxWithdraw;
+    uint DepositBonus;
+    uint transferTax;
+    
+    //mapping
+    mapping (address=> Account)public Accounts;
+    
+    //enum
+   enum accountType {saving,current,premium}
+
+   
+    
+    //events
+    event EDeposit(address a,uint b);
+    event Ewithdraw(address a,uint b);
+    event ETransfer(address sender,address receiver,uint c);
+    
+    // Account Struct
+    struct Account{
+        string name;
+        uint ID;
+        uint balance;
+        bool open;
+        accountType Type;
+        uint Tokens;
+        
+    }
+    
+    modifier onlyUser()
+    {
+        require(Accounts[msg.sender].open == true);
+        _;
+    }
+    
+//getters
+    
+        function getBalance()public view returns(uint)
+        {
+            return Accounts[msg.sender].balance;
+            
+        }
+        
+        function getBankTotal()onlyOwner public view returns(uint)
+        {
+            return BankProfit;
+        }
+ 
+        
+ //setters
+
+        function setMinDeposit(uint _value)onlyOwner public
+        {
+            minDeposit = _value;
+        }
+        
+        function setMinWithdraw(uint _value)onlyOwner public 
+        {
+            minWithdraw=_value;
+        }
+        
+        function setMaxWithdraw(uint _value)onlyOwner public
+        {
+            maxWithdraw=_value;
+        }
+        function setTransferTax(uint _value)onlyOwner public
+        {
+            transferTax=_value;
+        }
+        function setdepositBonus(uint _value)onlyOwner public
+        {
+            DepositBonus=_value;
+        }
+        
+        
+        // Account Creation
+        
+        function MakeAccount(string name,uint ID,accountType a,uint startAmount) public returns(bool done)
+        {
+           Accounts[msg.sender].ID=ID;
+           Accounts[msg.sender].name=name;
+           Accounts[msg.sender].Type=a;
+           Accounts[msg.sender].Tokens=0;
+           
+           if(Accounts[msg.sender].Type == accountType.saving){
+              Accounts[msg.sender].balance = startAmount.sub(20);
+              BankProfit=BankProfit.add(20);
+           }
+           if(Accounts[msg.sender].Type == accountType.current){
+              Accounts[msg.sender].balance = startAmount.sub(50);
+              BankProfit=BankProfit.add(50);
+           }
+           if(Accounts[msg.sender].Type == accountType.premium){
+               Accounts[msg.sender].balance = startAmount.sub(100);
+               BankProfit=BankProfit.add(100);
+           }
+           
+           
+           Accounts[msg.sender].open=true;
+           
+         
+           
+           return true;
+            
+        }
+        
+    
+
+        
+        function deposit (uint _value)onlyUser payable public returns (bool done)
+        {
+            require(_value>minDeposit);
+            
+                if (_value >800)
+                {
+                    Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value).add(DepositBonus);
+                     BankProfit=BankProfit.add(_value);
+                     EDeposit(msg.sender,_value);
+                }
+                else
+                {
+                Accounts[msg.sender].balance = Accounts[msg.sender].balance.add(_value);
+                BankProfit=BankProfit.add(_value);
+                EDeposit(msg.sender,_value);
+                }
+                return true; 
+            
+    
+        }
