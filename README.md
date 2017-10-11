@@ -9,4 +9,4 @@ Supposed Working of DecentralizedEscrow Contract:
 5. if the item is not recived by buyer or the delivery deadline is met then the notDelivered() method is called and the funds is sent back to buyers.
 
 
-# We have tested the code on private Blockchain every function is working fine except for verifyAndApprove function. the verifyAndApprove() is not working properly, the funds are lost somewhere when this function is called.
+# We have tested the code on private Blockchain every function is working fine except for verifyAndSend function. the verifyAndSend() is not working properly, the funds are lost somewhere when this function is called.
